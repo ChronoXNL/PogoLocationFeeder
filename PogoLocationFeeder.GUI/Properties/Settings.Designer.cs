@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace PogoLocationFeeder.GUI.Properties {
+namespace PogoLocationFeeder.Common.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -25,18 +25,6 @@ namespace PogoLocationFeeder.GUI.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DebugOutput {
-            get {
-                return ((string)(this["DebugOutput"]));
-            }
-            set {
-                this["DebugOutput"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("30")]
         public int ShowLimit {
             get {
@@ -44,6 +32,18 @@ namespace PogoLocationFeeder.GUI.Properties {
             }
             set {
                 this["ShowLimit"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Debug stuff in here!")]
+        public string DebugOutput {
+            get {
+                return ((string)(this["DebugOutput"]));
+            }
+            set {
+                this["DebugOutput"] = value;
             }
         }
     }

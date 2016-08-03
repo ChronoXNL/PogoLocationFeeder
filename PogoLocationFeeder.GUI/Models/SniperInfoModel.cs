@@ -1,24 +1,41 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using MangaChecker.ViewModels;
-using PoGo.LocationFeeder.Settings;
+using PogoLocationFeeder.GUI.ViewModels;
+using PogoLocationFeeder.Helper;
+using PogoLocationFeeder.Config;
 
-namespace PogoLocationFeeder.GUI.Models {
-    public class SniperInfoModel {
+namespace PogoLocationFeeder.Common.Models
+{
+    public class SniperInfoModel
+    {
         private SniperInfo _info;
+
+        public SniperInfoModel()
+        {
+            copyCoordsCommand = new ActionCommand(CopyCoords);
+            PokeSnipersCommand = new ActionCommand(PokeSnipers);
+            SniperVisibility = GlobalSettings.SniperVisibility;
+        }
+
         public BitmapImage Icon { get; set; }
         public string Server { get; set; }
         public string Channel { get; set; }
         public bool SniperVisibility { get; set; }
-        public SniperInfo Info {
+
+        public SniperInfo Info
+        {
             get { return _info; }
-            set {
+            set
+            {
                 _info = value;
-                Date = Info.ExpirationTimestamp.Equals(default(DateTime)) ? "Unknown" : Info.ExpirationTimestamp.ToString();
-                IV = Info.IV.Equals(0) ? "??" : Info.IV.ToString();
+                Date = Info.ExpirationTimestamp.Equals(default(DateTime))
+                    ? "Unknown"
+                    : Info.ExpirationTimestamp.ToString(CultureInfo.InvariantCulture);
+                IV = Info.IV.Equals(0) ? "??" : Info.IV.ToString(CultureInfo.InvariantCulture);
             }
         }
 
@@ -26,20 +43,26 @@ namespace PogoLocationFeeder.GUI.Models {
 
         public string IV { get; set; }
 
-        public SniperInfoModel() {
-            copyCoordsCommand = new ActionCommand(CopyCoords);
-            PokeSnipersCommand = new ActionCommand(PokeSnipers);
-            SniperVisibility = GlobalSettings.SniperVisibility;
-        }
-
-        public void CopyCoords() {
-            Clipboard.SetText($"{Info.Latitude}, {Info.Longitude}");
-        }
-        public void PokeSnipers() {
-            Process.Start($"pokesniper2://{Info.Id}/{Info.Latitude.ToString().Replace(",", ".")},{Info.Longitude.ToString().Replace(",", ".")}");
-        }
-
         public ICommand copyCoordsCommand { get; }
         public ICommand PokeSnipersCommand { get; }
+
+        public void CopyCoords()
+        {
+            Clipboard.SetText(
+                $"{Info.Latitude.ToString(CultureInfo.InvariantCulture)}, {Info.Longitude.ToString(CultureInfo.InvariantCulture)}");
+        }
+
+        public void PokeSnipers()
+        {
+            try
+            {
+                Process.Start(
+                    $"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}");
+            }
+            catch (Exception e)
+            {
+                Log.Error("Error while launching pokesniper2", e);
+            }
+        }
     }
 }
