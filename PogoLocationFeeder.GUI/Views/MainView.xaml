@@ -16,27 +16,20 @@
     <Grid>
         <DataGrid x:Name="DataGrid" ItemsSource="{Binding Pokemons}" AutoGenerateColumns="False"
                   Background="Transparent" SelectionMode="Single" VerticalContentAlignment="Center" IsReadOnly="True">
+            <DataGrid.Resources>
+                <viewmodels:BindingProxy x:Key="proxy" Data="{Binding}"/>
+            </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <materialDesign:PopupBox PlacementMode="BottomAndAlignLeftEdges"
-                                                     Margin="0, -5" Background="Gray">
-                                <StackPanel>
-                                    <Button Height="30"
+                                <Button Height="30"
                                             Command="{Binding copyCoordsCommand}"
-                                            Style="{DynamicResource MaterialDesignFlatButton}" Content="Copy Coords" />
-                                    <Button Height="30"
-                                            Command="{Binding PokeSnipersCommand}"
-                                            Style="{DynamicResource MaterialDesignFlatButton}"
-                                            Visibility="{Binding SniperVisibility, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                            Content="PokeSnipers2" />
-                                </StackPanel>
-                            </materialDesign:PopupBox>
+                                            Style="{DynamicResource MaterialDesignFlatButton}" ToolTip="Copy Coordinates" Content="CC"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn x:Name="col">
+                <DataGridTemplateColumn x:Name="col" Visibility="{Binding Data.ColVisibility, Source={StaticResource proxy}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Height="30" Command="{Binding PokeSnipersCommand}" Background="Transparent"

@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
-using PogoLocationFeeder.Common.Models;
+using PogoLocationFeeder.GUI.Models;
 
-namespace PogoLocationFeeder.Common
+namespace PogoLocationFeeder.GUI
 {
     public static class GlobalVariables
     {

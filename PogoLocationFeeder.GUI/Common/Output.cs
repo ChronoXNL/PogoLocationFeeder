@@ -6,18 +6,16 @@ using System.Windows.Media.Imaging;
 using log4net.Appender;
 using log4net.Core;
 using PogoLocationFeeder.Common;
-using PogoLocationFeeder.Common.Models;
 using PogoLocationFeeder.Config;
+using PogoLocationFeeder.GUI.Models;
 using PogoLocationFeeder.GUI.ViewModels;
 using PogoLocationFeeder.Helper;
-using PogoLocationFeeder.Common.Properties;
+using PogoLocationFeeder.GUI.Properties;
 
 namespace PogoLocationFeeder.GUI.Common
 {
     public class Output : IOutput
     {
-        private static int _showLimit = Settings.Default.ShowLimit;
-
         public void SetStatus(string message)
         {
             MainWindowViewModel.Instance.SetStatus(message);
@@ -39,23 +37,22 @@ namespace PogoLocationFeeder.GUI.Common
                     Channel = channelInfo.channel
                 };
                 InsertToList(info);
+                RemoveListExtras();
             });
+        }
+
+        public void RemoveListExtras()
+        {
+            var pokes = GlobalVariables.PokemonsInternal;
+            while (pokes.Count > GlobalSettings.ShowLimit)
+            {
+                pokes.Remove(pokes.Last());
+            }
         }
 
         public void InsertToList(SniperInfoModel info)
         {
             var pokes = GlobalVariables.PokemonsInternal;
-            _showLimit = Settings.Default.ShowLimit;
-            if (pokes.Count > _showLimit)
-            {
-                var diff = pokes.Count - _showLimit;
-                for (var i = 0; i < diff; i++)
-                {
-                    pokes.Remove(pokes.Last());
-                }
-            }
-            if (pokes.Count >= _showLimit)
-                pokes.Remove(pokes.Last());
             pokes.Insert(0, info);
         }
 

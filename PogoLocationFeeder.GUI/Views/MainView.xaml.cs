@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using PogoLocationFeeder.Config;
+using PogoLocationFeeder.GUI.Properties;
 
 namespace PogoLocationFeeder.GUI.Views
 {
@@ -9,17 +10,8 @@ namespace PogoLocationFeeder.GUI.Views
     /// </summary>
     public partial class MainView : UserControl
     {
-        public MainView()
-        {
+        public MainView() {
             InitializeComponent();
-            if (GlobalSettings.isOneClickSnipeSupported())
-            {
-                col.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                col.Visibility = Visibility.Collapsed;
-            }
         }
     }
 }
