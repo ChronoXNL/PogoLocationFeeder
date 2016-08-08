@@ -10,15 +10,15 @@ using POGOProtos.Enums;
 
 namespace PogoLocationFeeder.Repository
 {
-    public class PokeSniperRarePokemonRepository : IRarePokemonRepository
+    public class PokewatchersRarePokemonRepository : IRarePokemonRepository
     {
         //private const int timeout = 20000;
 
-        private const string URL = "http://pokesnipers.com/api/v1/pokemon.json";
-        private const string Channel = "Pokesnipers";
+        private const string URL = "https://pokewatchers.com/api.php?act=grab";
+        private const string Channel = "Pokewatchers";
         private readonly List<PokemonId> _pokemonIdsToFind;
 
-        public PokeSniperRarePokemonRepository(List<PokemonId> pokemonIdsToFind)
+        public PokewatchersRarePokemonRepository(List<PokemonId> pokemonIdsToFind)
         {
             _pokemonIdsToFind = pokemonIdsToFind;
         }
@@ -55,7 +55,7 @@ namespace PogoLocationFeeder.Repository
                 }
                 catch (Exception)
                 {
-                    Log.Debug("Pokesnipers API error: {0}", e.Message);
+                    Log.Debug("Pokewatchers API error: {0}", e.Message);
                     return null;
                 }
             }
@@ -68,9 +68,9 @@ namespace PogoLocationFeeder.Repository
 
         private List<SniperInfo> GetJsonList(string reader)
         {
-            var wrapper = JsonConvert.DeserializeObject<Wrapper>(reader, new JsonSerializerSettingsCultureInvariant());
+            var results = JsonConvert.DeserializeObject<List<PokewatchersResult>>(reader, new JsonSerializerSettingsCultureInvariant());
             var list = new List<SniperInfo>();
-            foreach (var result in wrapper.results)
+            foreach (var result in results)
             {
                 var sniperInfo = Map(result);
                 if (sniperInfo != null)
@@ -81,7 +81,7 @@ namespace PogoLocationFeeder.Repository
             return list;
         }
 
-        private SniperInfo Map(Result result)
+        private SniperInfo Map(PokewatchersResult result)
         {
             var sniperInfo = new SniperInfo();
             var pokemonId = PokemonParser.ParsePokemon(result.name);
@@ -98,33 +98,27 @@ namespace PogoLocationFeeder.Repository
             sniperInfo.Latitude = geoCoordinates.Latitude;
             sniperInfo.Longitude = geoCoordinates.Longitude;
 
-            sniperInfo.ExpirationTimestamp = Convert.ToDateTime(result.until);
+            var untilTime = DateTime.Now.AddTicks(result.until);
+            sniperInfo.ExpirationTimestamp = untilTime;
             return sniperInfo;
         }
     }
 
 
-    internal class Result
+    internal class PokewatchersResult
     {
-        [JsonProperty("id")]
-        public long id { get; set; }
 
-        [JsonProperty("name")]
+        [JsonProperty("pokemon")]
         public string name { get; set; }
 
-        [JsonProperty("coords")]
+        [JsonProperty("cords")]
         public string coords { get; set; }
 
-        [JsonProperty("until")]
-        public string until { get; set; }
+        [JsonProperty("timeend")]
+        public long until { get; set; }
 
         [JsonProperty("icon")]
         public string icon { get; set; }
     }
 
-    internal class Wrapper
-    {
-        [JsonProperty("results")]
-        public List<Result> results { get; set; }
-    }
 }

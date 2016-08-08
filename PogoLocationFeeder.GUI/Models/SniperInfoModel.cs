@@ -70,21 +70,33 @@ namespace PogoLocationFeeder.GUI.Models {
         }
 
         private void StartProcessWithPath() {
-            var sta = new Process();
-            var SniperFilePath = Settings.Default.Sniper2Path;
-            sta.StartInfo.FileName = SniperFilePath;
-            sta.StartInfo.Arguments = $"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}";
-            sta.Start();
-            sta.Dispose();
+            try
+            {
+                var sta = new Process();
+                var sniperFilePath = GlobalSettings.PokeSnipers2Exe;
+                var sniperFileDir = System.IO.Path.GetDirectoryName(sniperFilePath);
+                sta.StartInfo.FileName = sniperFilePath;
+                sta.StartInfo.WorkingDirectory = sniperFileDir;
+                sta.StartInfo.Arguments =
+                    $"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}";
+                sta.Start();
+                sta.Dispose();
+            }
+            catch (Exception e)
+            {
+                Log.Error("Error starting pokesniper2", e);
+            }
         }
 
         public void PokeSnipers()
         {
             try
             {
-                if (Settings.Default.Sniper2Path.Contains(".exe")) {
+                if (GlobalSettings.PokeSnipers2Exe.Contains(".exe")) {
+                    Log.Debug($"using the path: {GlobalSettings.PokeSnipers2Exe} to start pokesniper2 ");
                     StartProcessWithPath();
                 } else {
+                    Log.Debug("using url to start pokesniper2 ");
                     Process.Start($"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}");
                 }
             }

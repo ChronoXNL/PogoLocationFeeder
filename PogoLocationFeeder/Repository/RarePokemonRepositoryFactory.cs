@@ -17,6 +17,18 @@ namespace PogoLocationFeeder.Repository
             {
                 rarePokemonRepositories.Add(new TrackemonRarePokemonRepository(pokemonIds));
             }
+            if (GlobalSettings.UsePokezz)
+            {
+                rarePokemonRepositories.Add(new PokezzRarePokemonRepository(pokemonIds));
+            }
+            if (GlobalSettings.UsePokeSpawns)
+            {
+                rarePokemonRepositories.Add(new PokeSpawnsRarePokemonRepository(pokemonIds));
+            }
+            if (GlobalSettings.UsePokewatchers)
+            {
+                rarePokemonRepositories.Add(new PokewatchersRarePokemonRepository(pokemonIds));
+            }
             return rarePokemonRepositories;
         }
     }

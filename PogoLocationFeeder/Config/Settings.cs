@@ -19,8 +19,12 @@ namespace PogoLocationFeeder.Config
         public static bool Gui = false;
         public static IOutput Output;
         public static int Port = 16969;
-        public static bool UsePokeSnipers = false;
+        public static bool UsePokeSnipers = true;
         public static bool UseTrackemon = false;
+        public static bool UsePokeSpawns = true;
+        public static bool UsePokewatchers = true;
+        public static bool UsePokezz = true;
+
         public static string PokeSnipers2Exe = "";
         public static int RemoveAfter = 15;
         public static int ShowLimit = 30;
@@ -46,8 +50,11 @@ namespace PogoLocationFeeder.Config
                 set = JsonConvert.DeserializeObject<SettingsToSave>(input, jsonSettings);
                 settings = new GlobalSettings();
                 Port = set.Port;
-                UseTrackemon = set.UseTrackemon;
+                //UseTrackemon = set.UseTrackemon;
+                UsePokeSpawns = set.UsePokeSpawns;
                 UsePokeSnipers = set.UsePokeSnipers;
+                UsePokewatchers = set.UsePokewatchers;
+                UsePokezz = set.UsePokezz;
                 RemoveAfter = set.RemoveAfter;
                 ShowLimit = Math.Max(set.ShowLimit, 1);
                 PokeSnipers2Exe = set.PokeSnipers2Exe;
@@ -72,6 +79,10 @@ namespace PogoLocationFeeder.Config
 
         public static bool IsOneClickSnipeSupported()
         {
+            if (GlobalSettings.PokeSnipers2Exe != null && GlobalSettings.PokeSnipers2Exe.Contains(".exe"))
+            {
+                return true;
+            }
             const string keyName = @"pokesniper2\Shell\Open\Command";
             //return Registry.GetValue(keyName, valueName, null) == null;
             using (var Key = Registry.ClassesRoot.OpenSubKey(keyName))
@@ -98,7 +109,10 @@ namespace PogoLocationFeeder.Config
     public class SettingsToSave {
         public int Port = GlobalSettings.Port;
         public bool UsePokeSnipers = GlobalSettings.UsePokeSnipers;
-        public bool UseTrackemon = GlobalSettings.UseTrackemon;
+        //public bool UseTrackemon = GlobalSettings.UseTrackemon;
+        public bool UsePokezz = GlobalSettings.UsePokezz;
+        public bool UsePokeSpawns = GlobalSettings.UsePokeSpawns;
+        public bool UsePokewatchers = GlobalSettings.UsePokewatchers;
         public string PokeSnipers2Exe = GlobalSettings.PokeSnipers2Exe;
         public int RemoveAfter = GlobalSettings.RemoveAfter;
         public int ShowLimit = Math.Max(GlobalSettings.ShowLimit, 1);
