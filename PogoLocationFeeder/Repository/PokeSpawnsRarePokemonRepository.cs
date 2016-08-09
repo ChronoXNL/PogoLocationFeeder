@@ -18,14 +18,12 @@ namespace PogoLocationFeeder.Repository
 
         private const string URL = "ws://spawns.sebastienvercammen.be:49006/socket.io/?EIO=3&transport=websocket";
         private const string Channel = "PokeSpawns";
-        private readonly List<PokemonId> _pokemonIdsToFind;
         private WebSocket _client;
-        private ConcurrentBag<SniperInfo> _snipersInfos = new ConcurrentBag<SniperInfo>();
+        private ConcurrentQueue<SniperInfo> _snipersInfos = new ConcurrentQueue<SniperInfo>();
         private bool _started;
 
-        public PokeSpawnsRarePokemonRepository(List<PokemonId> pokemonIdsToFind)
+        public PokeSpawnsRarePokemonRepository()
         {
-            _pokemonIdsToFind = pokemonIdsToFind;
         }
 
         public List<SniperInfo> FindAll()
@@ -39,11 +37,12 @@ namespace PogoLocationFeeder.Repository
             var newSniperInfos = new List<SniperInfo>();
             lock (_snipersInfos)
             {
-                foreach (var sniperInfo in _snipersInfos)
+                SniperInfo sniperInfo = null;
+                while (_snipersInfos.TryDequeue(out sniperInfo))
                 {
                     newSniperInfos.Add(sniperInfo);
+
                 }
-                _snipersInfos = new ConcurrentBag<SniperInfo>();
             }
             return newSniperInfos;
         }
@@ -67,7 +66,12 @@ namespace PogoLocationFeeder.Repository
             {
                 Log.Warn("Received error from PokeSpawns. More info the logs");
                 Log.Debug("Received error from PokeSpawns: ", e);
-
+                try
+                {
+                    _client.Close();
+                    _client.Dispose();
+                    _client = null;
+                } catch(Exception) { }
                 _started = false;
             }
         }
@@ -91,7 +95,7 @@ namespace PogoLocationFeeder.Repository
                     {
                         lock (_snipersInfos)
                         {
-                            sniperInfos.ForEach(i => _snipersInfos.Add(i));
+                            sniperInfos.ForEach(i => _snipersInfos.Enqueue(i));
                         }
                     }
                 }
@@ -106,7 +110,7 @@ namespace PogoLocationFeeder.Repository
                     {
                         lock (_snipersInfos)
                         {
-                            _snipersInfos.Add(sniperInfo);
+                            _snipersInfos.Enqueue(sniperInfo);
                         }
                     }
                 }
@@ -140,10 +144,6 @@ namespace PogoLocationFeeder.Repository
         {
             var sniperInfo = new SniperInfo();
             var pokemonId = PokemonParser.ParsePokemon(result.name);
-            if (!_pokemonIdsToFind.Contains(pokemonId))
-            {
-                return null;
-            }
             sniperInfo.Id = pokemonId;
             sniperInfo.Latitude = result.lat;
             sniperInfo.Longitude = result.lon;

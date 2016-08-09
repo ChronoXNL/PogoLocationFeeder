@@ -2,14 +2,15 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using PogoLocationFeeder.Config;
-using PogoLocationFeeder.GUI.Properties;
 using PogoLocationFeeder.GUI.ViewModels;
 using PogoLocationFeeder.Helper;
 using PropertyChanged;
+using Timer = System.Threading.Timer;
 
 namespace PogoLocationFeeder.GUI.Models { 
 
@@ -72,21 +73,24 @@ namespace PogoLocationFeeder.GUI.Models {
         private void StartProcessWithPath() {
             try
             {
-                var sta = new Process();
+                var process = new Process();
                 var sniperFilePath = GlobalSettings.PokeSnipers2Exe;
                 var sniperFileDir = System.IO.Path.GetDirectoryName(sniperFilePath);
-                sta.StartInfo.FileName = sniperFilePath;
-                sta.StartInfo.WorkingDirectory = sniperFileDir;
-                sta.StartInfo.Arguments =
+                process.StartInfo.FileName = sniperFilePath;
+                process.StartInfo.WorkingDirectory = sniperFileDir;
+                process.StartInfo.Arguments =
                     $"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}";
-                sta.Start();
-                sta.Dispose();
+                process.Start();
+
+                KillProcessLater(process);
+
             }
             catch (Exception e)
             {
                 Log.Error("Error starting pokesniper2", e);
             }
         }
+
 
         public void PokeSnipers()
         {
@@ -97,7 +101,8 @@ namespace PogoLocationFeeder.GUI.Models {
                     StartProcessWithPath();
                 } else {
                     Log.Debug("using url to start pokesniper2 ");
-                    Process.Start($"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}");
+                    var process = Process.Start($"pokesniper2://{Info.Id}/{Info.Latitude.ToString(CultureInfo.InvariantCulture)},{Info.Longitude.ToString(CultureInfo.InvariantCulture)}");
+                    KillProcessLater(process);
                 }
             }
             catch (Exception e)
@@ -105,6 +110,7 @@ namespace PogoLocationFeeder.GUI.Models {
                 Log.Error("Error while launching pokesniper2", e);
             }
         }
+
         public void CleanupThread() {
             while(true) {
                 try {
@@ -133,5 +139,33 @@ namespace PogoLocationFeeder.GUI.Models {
             }
             // ReSharper disable once FunctionNeverReturns
         }
+
+        private static void KillProcessLater(Process process)
+        {
+            if (process != null)
+            {
+                Task.Run(async () => await AfterDelay(() =>
+                {
+                    process.Kill();
+                    process.Dispose();
+                }, 30000));
+            }
+        }
+
+
+        static async Task AfterDelay(Action action, int delay)
+        {
+            try
+            {
+                await Task.Delay(delay);
+                action.Invoke();
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+
     }
 }

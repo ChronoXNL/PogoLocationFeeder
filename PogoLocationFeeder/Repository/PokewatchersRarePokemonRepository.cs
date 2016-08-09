@@ -16,48 +16,29 @@ namespace PogoLocationFeeder.Repository
 
         private const string URL = "https://pokewatchers.com/api.php?act=grab";
         private const string Channel = "Pokewatchers";
-        private readonly List<PokemonId> _pokemonIdsToFind;
 
-        public PokewatchersRarePokemonRepository(List<PokemonId> pokemonIdsToFind)
+        public PokewatchersRarePokemonRepository()
         {
-            _pokemonIdsToFind = pokemonIdsToFind;
         }
 
         public List<SniperInfo> FindAll()
         {
             try
             {
-                var request = WebRequest.CreateHttp(URL);
-                request.Accept = "application/json";
-                request.Method = "GET";
-                request.Timeout = 20000;
+                var handler = new ClearanceHandler();
 
-                using (var response = request.GetResponse())
+                // Create a HttpClient that uses the handler.
+                using (var client = new HttpClient(handler))
                 {
-                    using (var reader = new StreamReader(response.GetResponseStream()))
-                    {
-                        return GetJsonList(reader.ReadToEnd());
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                try
-                {
-                    var handler = new ClearanceHandler();
-
-                    // Create a HttpClient that uses the handler.
-                    var client = new HttpClient(handler);
-
                     // Use the HttpClient as usual. Any JS challenge will be solved automatically for you.
                     var content = client.GetStringAsync(URL).Result;
                     return GetJsonList(content);
                 }
-                catch (Exception)
-                {
-                    Log.Debug("Pokewatchers API error: {0}", e.Message);
-                    return null;
-                }
+            }
+            catch (Exception e)
+            {
+                Log.Debug("Pokewatchers API error: {0}", e.Message);
+                return null;
             }
         }
 
@@ -85,10 +66,6 @@ namespace PogoLocationFeeder.Repository
         {
             var sniperInfo = new SniperInfo();
             var pokemonId = PokemonParser.ParsePokemon(result.name);
-            if (!_pokemonIdsToFind.Contains(pokemonId))
-            {
-                return null;
-            }
             sniperInfo.Id = pokemonId;
             var geoCoordinates = GeoCoordinatesParser.ParseGeoCoordinates(result.coords);
             if (geoCoordinates == null)
