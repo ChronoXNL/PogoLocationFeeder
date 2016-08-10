@@ -2,12 +2,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using PogoLocationFeeder.Common;
 using PogoLocationFeeder.Helper;
+using POGOProtos.Enums;
 
 #endregion
 
@@ -22,7 +25,7 @@ namespace PogoLocationFeeder.Config
         public static int Port = 16969;
         public static bool UsePokeSnipers = true;
         public static bool UseTrackemon = false;
-        public static bool UsePokeSpawns = true;
+        public static bool UseRareSpawns = true;
         public static bool UsePokewatchers = true;
         public static bool UsePokezz = true;
 
@@ -56,7 +59,7 @@ namespace PogoLocationFeeder.Config
                 settings = new GlobalSettings();
                 Port = set.Port;
                 //UseTrackemon = set.UseTrackemon;
-                UsePokeSpawns = set.UsePokeSpawns;
+                UseRareSpawns = set.UseRareSpawns;
                 UsePokeSnipers = set.UsePokeSnipers;
                 UsePokewatchers = set.UsePokewatchers;
                 UsePokezz = set.UsePokezz;
@@ -123,7 +126,10 @@ namespace PogoLocationFeeder.Config
                 jsonSettings.Converters.Add(new StringEnumConverter {CamelCaseText = true});
                 jsonSettings.ObjectCreationHandling = ObjectCreationHandling.Replace;
                 jsonSettings.DefaultValueHandling = DefaultValueHandling.Populate;
-                return JsonConvert.DeserializeObject<List<string>>(input, jsonSettings);
+                return JsonConvert.DeserializeObject<List<string>>(input, jsonSettings).
+                    Where(x => PokemonParser.ParsePokemon(x, true) != PokemonId.Missingno).
+                    GroupBy(x => PokemonParser.ParsePokemon(x)).
+                    Select(y => y.FirstOrDefault()).ToList();
             } else {
                 var output = JsonConvert.SerializeObject(DefaultPokemonsToFeed, Formatting.Indented,
                 new StringEnumConverter { CamelCaseText = true });
@@ -139,15 +145,39 @@ namespace PogoLocationFeeder.Config
 
     }
 
-    public class SettingsToSave {
+    public class SettingsToSave
+    {
+        [DefaultValue(16969)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int Port = GlobalSettings.Port;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UsePokeSnipers = GlobalSettings.UsePokeSnipers;
+
         //public bool UseTrackemon = GlobalSettings.UseTrackemon;
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UsePokezz = GlobalSettings.UsePokezz;
-        public bool UsePokeSpawns = GlobalSettings.UsePokeSpawns;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        public bool UseRareSpawns = GlobalSettings.UseRareSpawns;
+
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public bool UsePokewatchers = GlobalSettings.UsePokewatchers;
+
+        [DefaultValue("")]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public string PokeSnipers2Exe = GlobalSettings.PokeSnipers2Exe;
+
+        [DefaultValue(5)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int RemoveAfter = GlobalSettings.RemoveAfter;
+
+        [DefaultValue(30)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         public int ShowLimit = Math.Max(GlobalSettings.ShowLimit, 1);
 
     }

@@ -12,17 +12,17 @@ using WebSocket4Net;
 
 namespace PogoLocationFeeder.Repository
 {
-    public class PokeSpawnsRarePokemonRepository : IRarePokemonRepository
+    public class RareSpawnsRarePokemonRepository : IRarePokemonRepository
     {
         //private const int timeout = 20000;
 
-        private const string URL = "ws://spawns.sebastienvercammen.be:49006/socket.io/?EIO=3&transport=websocket";
-        private const string Channel = "PokeSpawns";
+        private const string URL = "ws://188.165.224.208:49001/socket.io/?EIO=3&transport=websocket";
+        private const string Channel = "RareSpawns";
         private WebSocket _client;
         private ConcurrentQueue<SniperInfo> _snipersInfos = new ConcurrentQueue<SniperInfo>();
         private bool _started;
 
-        public PokeSpawnsRarePokemonRepository()
+        public RareSpawnsRarePokemonRepository()
         {
         }
 
@@ -32,7 +32,7 @@ namespace PogoLocationFeeder.Repository
             {
                 Task.Run(() => StartClient());
                 _started = true;
-                Thread.Sleep(10*1000);
+                Thread.Sleep(1000);
             }
             var newSniperInfos = new List<SniperInfo>();
             lock (_snipersInfos)
@@ -53,43 +53,49 @@ namespace PogoLocationFeeder.Repository
             return Channel;
         }
 
-        private async Task StartClient()
+        public async Task StartClient()
         {
             try
             {
-                _client = new WebSocket(URL, "basic", WebSocketVersion.Rfc6455);
+                _client = new WebSocket(URL, "", WebSocketVersion.None);
                 _client.Closed += Client_Closed;
                 _client.MessageReceived += Client_MessageReceived;
+                _client.Error += Client_Error;
+
                 _client.Open();
             }
             catch (Exception e)
             {
                 Log.Warn("Received error from PokeSpawns. More info the logs");
                 Log.Debug("Received error from PokeSpawns: ", e);
-                try
-                {
-                    _client.Close();
-                    _client.Dispose();
-                    _client = null;
-                } catch(Exception) { }
-                _started = false;
+                CloseClient();
             }
         }
 
         private void Client_Closed(object sender, EventArgs e)
         {
-            _started = false;
+            CloseClient();
+        }
+
+        private void Client_Error(object sender, EventArgs e)
+        {
+            CloseClient();
         }
 
         private void Client_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
             var message = e.Message;
-            //Log.Debug("Pokezz message: " + message);
-            var match = Regex.Match(message, @"(1?\d+)\[""helo"",(2?.*)\]");
+            if (message == "40")
+            {
+                _client?.Send("40/pokes");
+            }
+            Log.Debug("Pokezz message: " + message);
+            var match = Regex.Match(message, @"(1?\d+)[^\[]+\[""helo"",(2?.*)\]");
             if (match.Success)
             {
                 if (match.Groups[1].Value == "42")
                 {
+                    Log.Debug("Pokezz message: " + match.Groups[2].Value);
                     var sniperInfos = GetJsonList(match.Groups[2].Value);
                     if (sniperInfos != null && sniperInfos.Any())
                     {
@@ -99,18 +105,20 @@ namespace PogoLocationFeeder.Repository
                         }
                     }
                 }
-            }
-            match = Regex.Match(message, @"(1?\d+)\[""poke"",(2?.*)\]");
-            if (match.Success)
-            {
-                if (match.Groups[1].Value == "42")
+            } else { 
+                match = Regex.Match(message, @"(1?\d+)[^\[]+\[""poke"",(2?.*)\]");
+                if (match.Success)
                 {
-                    var sniperInfo = GetJson(match.Groups[2].Value);
-                    if (sniperInfo != null)
+                    if (match.Groups[1].Value == "42")
                     {
-                        lock (_snipersInfos)
+                        var sniperInfo = GetJson(match.Groups[2].Value);
+                        if (sniperInfo != null)
                         {
-                            _snipersInfos.Enqueue(sniperInfo);
+                            lock (_snipersInfos)
+                            {
+                                Log.Info($"sniperInfos message2: {sniperInfo.IV} {sniperInfo.Id.ToString()}");
+                                _snipersInfos.Enqueue(sniperInfo);
+                            }
                         }
                     }
                 }
@@ -125,6 +133,7 @@ namespace PogoLocationFeeder.Repository
             foreach (var result in results)
             {
                 var sniperInfo = Map(result);
+                Log.Info($"GetJsonList: {sniperInfo.IV} {sniperInfo.Id.ToString()}");
                 if (sniperInfo != null)
                 {
                     list.Add(sniperInfo);
@@ -148,6 +157,28 @@ namespace PogoLocationFeeder.Repository
             sniperInfo.Latitude = result.lat;
             sniperInfo.Longitude = result.lon;
             return sniperInfo;
+        }
+
+        private void CloseClient()
+        {
+            _started = false;
+            try
+            {
+                try
+                {
+                    _client?.Close();
+                }
+                catch (Exception e)
+                {
+                    // ignore
+                }
+                _client.Dispose();
+                _client = null;
+            }
+            catch (Exception e)
+            {
+                // ignore
+            }
         }
     }
 
