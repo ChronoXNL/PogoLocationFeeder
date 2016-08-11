@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using MaterialDesignThemes.Wpf;
 using PogoLocationFeeder.Config;
 using PogoLocationFeeder.GUI.ViewModels;
 using PogoLocationFeeder.Helper;
@@ -25,16 +26,14 @@ namespace PogoLocationFeeder.GUI.Models {
             PokeSnipersCommand = new ActionCommand(PokeSnipers);
             SniperVisibility = GlobalSettings.SniperVisibility;
             Created = DateTime.Now;
-
-
-            Thread clean = new Thread(CleanupThread) { IsBackground = true };
-            clean.Start();
         }
 
         public BitmapImage Icon { get; set; }
         public string Server { get; set; }
         public string Channel { get; set; }
         public bool SniperVisibility { get; set; }
+        public PackIconKind VerifiedIcon { get; set; } = PackIconKind.Close;
+        public string VerifiedTooltip { get; set; }
 
         public SniperInfo Info
         {
@@ -46,6 +45,8 @@ namespace PogoLocationFeeder.GUI.Models {
                     ? "Unknown"
                     : Info.ExpirationTimestamp.ToString(CultureInfo.InvariantCulture);
                 IV = Info.IV.Equals(0) ? "??" : Info.IV.ToString(CultureInfo.InvariantCulture);
+                VerifiedIcon = Info.Verified ? PackIconKind.Check : PackIconKind.Close;
+                VerifiedTooltip = Info.Verified ? "Verified " : "Not Verifed";
             }
         }
 
@@ -109,35 +110,6 @@ namespace PogoLocationFeeder.GUI.Models {
             {
                 Log.Error("Error while launching pokesniper2", e);
             }
-        }
-
-        public void CleanupThread() {
-            while(true) {
-                try {
-                    var ukn = "";
-                    var expiration = Info.ExpirationTimestamp;
-                    if(expiration.Equals(default(DateTime))) {
-                        expiration = Created.AddMinutes(GlobalSettings.RemoveAfter);
-                        ukn = "unk. ";
-                    }
-                    var remaining = expiration - DateTime.Now;
-
-                    if(remaining < TimeSpan.Zero) {
-                        Application.Current.Dispatcher.BeginInvoke(new Action(() => {
-                            GlobalVariables.PokemonsInternal.Remove(this);
-                        }));
-                    }
-                    Application.Current.Dispatcher.BeginInvoke(new Action(() => {
-                        Date = $"{ukn}{remaining.Minutes}m {remaining.Seconds}s";
-                    }));
-                    Thread.Sleep(1000);
-                } catch (Exception) {
-                    Thread.Sleep(1000);
-                    //hmm ignore?
-                }
-                
-            }
-            // ReSharper disable once FunctionNeverReturns
         }
 
         private static void KillProcessLater(Process process)

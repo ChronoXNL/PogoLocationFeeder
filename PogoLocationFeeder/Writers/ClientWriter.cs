@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using PogoLocationFeeder.Config;
 using PogoLocationFeeder.Helper;
+using PogoLocationFeeder.Repository;
 
 namespace PogoLocationFeeder.Writers
 {
@@ -95,8 +97,10 @@ namespace PogoLocationFeeder.Writers
             // Remove any clients that have disconnected
             if (GlobalSettings.ThreadPause) return;
             _arrSocket.RemoveAll(x => !IsConnected(x.Client));
-            var unsentMessages = _messageCache.FindUnSentMessages(snipeList);
-            foreach (var target in unsentMessages)
+            var verifiedSniperInfos = SkipLaggedPokemonLocationValidator.FilterNonAvailableAndUpdateMissingPokemonId(snipeList);
+            var verifiedUnsentMessages = _messageCache.FindUnSentMessages(verifiedSniperInfos);
+            var sortedMessages = verifiedUnsentMessages.OrderBy(m => m.ExpirationTimestamp).ToList();
+            foreach (var target in sortedMessages)
             {
                 if (!GlobalSettings.PokekomsToFeedFilter.Contains(target.Id.ToString())) {
                     Log.Info($"Ignoring {target.Id}, it's not in Filterlist");
